@@ -1,0 +1,142 @@
+<!DOCTYPE html><html lang="en"><head>
+            <script src="CsoundObj.js"></script>
+<script src="csound.js"></script>
+    <script src="/serial.js"></script>
+    <script src="p5.js"></script>
+    <script src="p5.sound.min.js"></script>
+
+    
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="utf-8">
+
+  </head>
+  <body>
+<!--     <p>
+      <button id="connect">Connect</button> <span id="status"></span>
+    </p> -->
+    
+    
+    <main>
+    </main>
+    <script src="sketch.js"></script>
+    
+    <textarea class="code" id="instruments" hidden="">
+
+    ksmps=64 
+    nchnls = 2
+    0dbfs = 1
+
+    gifn	ftgen	0,0, 257, 9, .5,1,270
+          
+   giSin ftgen 1, 0 ,16384, 10, 1
+          
+      gaVerb init 0 
+    instr 1
+
+    kpwm = chnget:k("pwm")
+
+    kres = lfo:k(chnget:k("lfoRange") , chnget:k("lfo") ) + 0.5
+    kres2 = lfo:k(chnget:k("lfoRange") * 0.5 , chnget:k("lfo")*0.5 ) + 0.5
+
+    asig1 vco2 0.01, cpsmidinn(48), 4,  (0.7*(1-kpwm)) +0.05
+    asig2 vco2 0.01, cpsmidinn(55),4,  (0.7*(1-kpwm)) +0.05
+    asig3 vco2 0.007, cpsmidinn(52)*semitone(1*chnget:k("Social21")/4),4,(0.7*(1-kpwm)) +0.05
+    asig4 vco2 0.01, cpsmidinn(62), 4,  (0.7*(1-kpwm)) +0.05
+    asig5 vco2 0.005*chnget:k("pwm"), cpsmidinn(36), 8
+    asig = (asig1+asig2+asig3+asig4+asig5)/5
+    asig	distort	asig+ (asig*0.2)*(chnget:k("Social21")), chnget:k("Social21")*0.39, gifn
+    asig butterlp asig + (asig*0.9)*((1-chnget:k("pwm"))*(1-(chnget:k("Social21")*0.3))) , chnget:k("filter") 
+    asig = asig * 4
+    asigL, asigR pan2 asig*chnget:k("mute") , 0.5
+    outs asigL*10, asigR*10
+
+    aoutL, aoutR reverbsc asigL*0.7, asigR*0.7, 0.95, 13000
+    outs aoutL*10, aoutL*10
+
+    endin
+      
+  instr 2
+
+
+knotes[] fillarray 60, 64, 67, 72, 76, 79
+irandnote  = int(abs( rnd31:i( 5, -0.5)))
+irandAmp = abs( rnd31:i( 0.6, -0.5)) + 0.4
+ 
+///Sizzling Metal  
+kenv linseg 0, p3/6, 1, (p3/6) * 2, 1, (p3/6)*3, 0
+asig1 foscil 0.2*kenv*irandAmp, cpsmidinn(knotes[irandnote]), 1, 5 + chnget:k("Social12") * 0.1 , ( 8 *( chnget:k("Social11") ) ) + 0.3 , 1
+asig2 foscil 0.2*kenv*irandAmp, cpsmidinn(knotes[irandnote]), 1, 5, ( 8 *( chnget:k("Social11") ) ) + 0.3 , 1 
+asig = (asig1 + asig2)*0.5
+asig moogladder asig, 6000, 0.4
+
+      
+outs asig, asig 
+      gaVerb = gaVerb + asig
+endin
+    
+  instr 3
+
+
+knotes[] fillarray 60, 64, 67, 72, 76, 79
+irandnote  = int(abs( rnd31:i( 5, -0.5)))
+irandAmp = abs( rnd31:i( 0.6, -0.5)) + 0.4
+
+
+      
+///Spooky Bell  
+      ares init 0
+kenv linseg 0,0.01, 1, (p3/6) * 0.3, 1, (p3/6)*3, 0
+asig foscil 0.1*kenv*irandAmp, cpsmidinn(knotes[irandnote]), 1, 3.5, 5 *chnget:k("Social31") + 0.3 , 1
+ares delay asig + (ares *0.6), 0.3
+acof moogladder ares + ares * (0.2*(1.1- chnget:k("Social21"))), 2600*chnget:k("Social32") + 1500, 0.4
+
+acof = acof*0.6 + acof * (0.4*(1.1- chnget:k("Social22")))
+
+outs acof *0.5 , acof *0.5
+      gaVerb = gaVerb + acof
+endin
+
+  instr 4
+
+
+knotes[] fillarray 60, 64, 67, 72, 76, 79
+irandnote  = int(abs( rnd31:i( 5, -0.5)))
+irandAmp = abs( rnd31:i( 0.6, -0.5)) + 0.4
+ 
+
+ares init 0
+      
+//Classic Sine
+kenv linseg 0,0.01, 1, (p3/6) * 0.3, 1, (p3/6)*3, 0
+asig1 oscil 0.35*kenv*irandAmp, cpsmidinn(knotes[irandnote])
+asig2 oscil 0.1*kenv*irandAmp, cpsmidinn(knotes[irandnote])*2
+
+asig = asig1 + asig2 
+
+ares delay asig + (ares *0.2), 0.4
+
+asigMix =  ( asig + ares*chnget:k("Social32")  ) * (lfo:k(0.5  *kenv  , 4 *chnget:k("Social31")  ) + 0.5 ) 
+
+asigMix = asigMix* 0.4
+      
+outs asigMix, asigMix 
+gaVerb = gaVerb + asigMix
+
+endin
+      
+      
+      instr 1000
+      
+    aoutL, aoutR reverbsc gaVerb*0.7, gaVerb*0.7, 0.95, 16000
+
+      outs aoutL, aoutR
+      gaVerb = 0
+      endin
+      
+      
+
+    </textarea>
+
+  
+
+</body></html>
